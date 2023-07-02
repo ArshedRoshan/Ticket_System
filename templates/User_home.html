@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Home</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
+</head>
+<style>
+   .ls{
+    margin: 70px;
+        margin-left: 300px;
+
+   }
+    .table {
+        width: 50%;
+        border-collapse: collapse;
+        margin:-54px;
+        margin-left: 341px;
+        
+    }
+
+    .table th, .table td {
+        padding: 8px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+
+    .table th {
+        background-color: #f2f2f2;
+        font-weight: bold;
+    }
+
+    .table tbody tr:hover {
+        background-color: #f5f5f5;
+    }
+</style>
+<body>
+    <h1>Welcome <span id="name"></span></h1>
+    <button id="logoutButton" type="button">Logout</button>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createTicketModal">Add Ticket</button>
+      
+
+
+    <div class="modal fade" id="createTicketModal" tabindex="-1" aria-labelledby="createDepartmentModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createDepartmentModalLabel">Add Ticket</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="ticketForm">
+                        <div class="mb-3">
+                            <label for="nameInput" class="form-label">Subject</label>
+                            <input type="text" class="form-control" id="subjectInput" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="descriptionInput" class="form-label">Priority</label>
+                            <input type="text" class="form-control" id="priorityInput" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="descriptionInput" class="form-label">Body</label>
+                            <input type="text" class="form-control" id="bodyInput" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="descriptionInput" class="form-label">Email</label>
+                            <input type="text" class="form-control" id="emailInput" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="descriptionInput" class="form-label">Phone numer</label>
+                            <input type="text" class="form-control" id="phoneInput" required>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h5 class="ls">List of tickets</h5>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Ticket id</th>
+                <th>Subject</th>
+                <th>Body</th>
+                <th>Priority</th>
+               
+               
+                
+            </tr>
+        </thead>
+        <tbody id="ticketTableBody">
+            <!-- Table rows will be dynamically populated here -->
+        </tbody>
+    </table>
+     
+
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        function parseJwt(token) {
+            var base64Url = token.split('.')[1];
+            var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            var jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+        
+            return JSON.parse(jsonPayload);
+        }
+
+        let payload1, payload2;
+        const authTokens = localStorage.getItem('authTokens');
+        if (!authTokens) {
+            // Redirect to login page
+            window.location.href = 'User_login.html';
+        } else {
+            const access_token = JSON.parse(authTokens).access;
+            const payload = parseJwt(access_token).name;
+            payload1 = parseJwt(access_token).email;
+            payload2 = parseJwt(access_token).phone;
+            console.log('Name:', payload);
+            console.log('eeme',payload1)
+            console.log('pjjkj',payload2)
+            const nameElement = document.getElementById('name');
+            if (nameElement) {
+                nameElement.innerText = payload;
+            } else {
+                console.error("Element with ID 'name' not found.");
+            }
+
+            const emailInput = document.getElementById('emailInput');
+            const phoneInput = document.getElementById('phoneInput');
+
+            if (emailInput) {
+                emailInput.value = payload1;
+            } else {
+                console.error("Element with ID 'emailInput' not found.");
+            }
+
+            if (phoneInput) {
+                phoneInput.value = payload2;
+            } else {
+                console.error("Element with ID 'phoneInput' not found.");
+            }
+
+            const logoutButton = document.getElementById('logoutButton');
+            if (logoutButton) {
+                logoutButton.addEventListener('click', function() {
+                    // Clear local storage
+                    localStorage.removeItem('authTokens');
+                    // Redirect to login page
+                    window.location.href = 'User_login.html';
+                });
+            } else {
+                console.error("Element with ID 'logoutButton' not found.");
+            }
+        }
+
+
+        const add_ticket = async(event)=>{
+            event.preventDefault()
+            Subject = document.getElementById('subjectInput').value;
+            Body = document.getElementById('bodyInput').value;
+            Priority = document.getElementById('priorityInput').value;
+            Email = document.getElementById('emailInput').value;
+            Phone_Number = document.getElementById('phoneInput').value;
+            
+
+            
+            
+            try {
+                const response = await axios.post('http://127.0.0.1:8000/Users/add_ticket', {
+                  Subject,
+                  Body,
+                  Priority,
+                  Email,
+                  Phone_Number
+                });
+                console.log('response', response.data);
+                // Handle success scenario
+                alert(JSON.stringify(response.data.Message));
+          
+                const modal = document.getElementById('createTicketModal');
+                const bootstrapModal = bootstrap.Modal.getInstance(modal);
+                bootstrapModal.hide();
+              } catch (error) {
+                console.error(error);
+                // Handle error scenario
+              }
+
+        };
+        document.getElementById('ticketForm').addEventListener('submit', add_ticket);
+
+
+
+
+        const populateTicketsTable = async () => {
+            try {
+                const response = await axios.get(`http://127.0.0.1:8000/Users/get_ticket_by_user/${payload1}`);
+                const tickets = response.data;
+    
+                const ticketTableBody = document.getElementById('ticketTableBody');
+    
+                // Clear existing table rows
+                ticketTableBody.innerHTML = '';
+    
+                // Create and append new table rows for each ticket
+                tickets.forEach((ticket) => {
+                    const row = document.createElement('tr');
+                    
+                    const idCell = document.createElement('td')
+                    idCell.textContent = ticket.id;
+                    row.appendChild(idCell)
+
+                    const subjectCell = document.createElement('td');
+                    subjectCell.textContent = ticket.Subject;
+                    row.appendChild(subjectCell);
+    
+                    const bodyCell = document.createElement('td');
+                    bodyCell.textContent = ticket.Body;
+                    row.appendChild(bodyCell);
+    
+                    const priorityCell = document.createElement('td');
+                    priorityCell.textContent = ticket.Priority;
+                    row.appendChild(priorityCell);
+    
+                    
+                
+    
+                    ticketTableBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error(error);
+                // Handle error scenario
+            }
+        };
+    
+        populateTicketsTable();
+    </script>
+</body>
+</html>

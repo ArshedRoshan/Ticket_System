@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
+
+    <style>
+        .custom-card {
+            width: 300px; /* Define the desired width */
+            /* Add any other custom styles here */
+            /* For example: */
+            margin: 10px;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="departmentContainer" class="container">
+        <div class="row" id="cardRow"></div>
+    </div>
+
+    <div class="modal fade" id="departmentModal" tabindex="-1" aria-labelledby="departmentModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="departmentModalLabel">Update Department</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="departmentForm">
+                        <div class="mb-3">
+                            <label for="nameInput" class="form-label">Name</label>
+                            <input type="text" class="form-control" id="nameInput" required/>
+                        </div>
+                        <div class="mb-3">
+                            <label for="descriptionInput" class="form-label">Description</label>
+                            <input type="text" class="form-control" id="descriptionInput" required/>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Update</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        const renderDepartments = (departments) => {
+            const cardRow = document.getElementById('cardRow');
+
+            const cards = departments.map((department) => {
+                return `
+                    <div class="col-md-4">
+                        <div class="card custom-card">
+                            <div class="card-body">
+                                <h5 class="card-title">${department.Name}</h5>
+                                <p class="card-text">${department.Description}</p>
+                                <p class="card-text">Created by: ${department.created_by}</p>
+                                <p class="card-text">Created at: ${department.Created_at}</p>
+                                <p class="card-text">Last Updated at: ${department.Last_Update_at}</p>
+                                <button type="button" class="btn btn-primary update-button" data-bs-toggle="modal" data-bs-target="#departmentModal" data-department-id="${department.id}">Update</button>
+                                
+                                ${department.status === false ? '<button type="button" class="btn btn-danger delete-button" data-department-id="' + department.id + '">Delete</button>' : '<p><b>Cant DeleteAssigned to a User</b></p>'}
+
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            cardRow.innerHTML = cards.join('');
+
+            // Add event listeners to update buttons
+            const updateButtons = document.getElementsByClassName('update-button');
+            for (let i = 0; i < updateButtons.length; i++) {
+                updateButtons[i].addEventListener('click', handleUpdateClick);
+            }
+        };
+
+        const handleUpdateClick = async (event) => {
+            const departmentId = event.target.dataset.departmentId;
+            try {
+                const response = await axios.get(`http://127.0.0.1:8000/Admin/get_department/${departmentId}`);
+                const department = response.data;
+                console.log('rere',department)
+                const nameInput = document.getElementById('nameInput');
+                const descriptionInput = document.getElementById('descriptionInput');
+                nameInput.value = department.Name;
+                descriptionInput.value = department.Description;
+                // Set the department ID as a data attribute on the form
+                const departmentForm = document.getElementById('departmentForm');
+                departmentForm.dataset.departmentId = departmentId;
+            } catch (error) {
+                console.error(error);
+                // Handle error scenario
+            }
+        };
+
+        const handleFormSubmit = async (event) => {
+            event.preventDefault();
+            const departmentForm = document.getElementById('departmentForm');
+            const departmentId = departmentForm.dataset.departmentId;
+            const nameInput = document.getElementById('nameInput');
+            const descriptionInput = document.getElementById('descriptionInput');
+            const data = {
+                Name: nameInput.value,
+                Description: descriptionInput.value
+            };
+            try {
+                const response = await axios.put(`http://127.0.0.1:8000/Admin/update_department/${departmentId}`, data);
+                const updatedDepartment = response.data;
+                // Handle the updated department as needed
+                // Close the modal or update the department details on the page
+                // You can call the getDepartments function again to fetch the updated list of departments
+                getDepartments();
+                // Close the modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('departmentModal'));
+                modal.hide();
+            } catch (error) {
+                console.error(error);
+                // Handle error scenario
+            }
+        };
+
+        const getDepartments = async () => {
+            try {
+                const response = await axios.get('http://127.0.0.1:8000/Admin/get_all_departments');
+                const departments = response.data;
+                console.log('dep',departments)
+                
+                renderDepartments(departments);
+
+                const deleteButtons = document.getElementsByClassName('delete-button');
+                for (let i = 0; i < deleteButtons.length; i++) {
+                    deleteButtons[i].addEventListener('click', handleDeleteClick);
+                }
+            } catch (error) {
+                console.error(error);
+                // Handle error scenario
+            }
+        };
+
+        // Add event listener to the form submit button
+        const departmentForm = document.getElementById('departmentForm');
+        departmentForm.addEventListener('submit', handleFormSubmit);
+        const handleDeleteClick = async (event) => {
+            const departmentId = event.target.dataset.departmentId;
+        
+            // Show the confirmation modal
+            if (confirm('Are you sure you want to delete this department?')) {
+                try {
+                    // Send the delete request to the server
+                    const response = await axios.delete(`http://127.0.0.1:8000/Admin/delete_department/${departmentId}`);
+                    const message = response.data;
+        
+                    // Handle the response as needed
+                    // For example, display a success message or refresh the department list
+                    alert(response.data.message);
+                    getDepartments();
+                } catch (error) {
+                    console.error(error);
+                    // Handle error scenario
+                }
+            }
+        };
+        // Call the function when the page is loaded
+        window.addEventListener('load', getDepartments);
+    </script>
+
+
+</body>
+</html>
